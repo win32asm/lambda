@@ -1,0 +1,3 @@
+#!/bin/bash
+erl -compile master
+erl -noshell -s master start -s init stop
