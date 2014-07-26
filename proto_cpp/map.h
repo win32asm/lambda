@@ -3,6 +3,7 @@
 #include <vector>
 #include <ifstream>
 #include <stdexcept>
+#include <array>
 
 namespace icfpc {
 
@@ -12,6 +13,7 @@ namespace icfpc {
     using std::getline;
     using std::vector;
     using std::exception;
+    using std::array;
 
     enum class Source { // anything >=Ghost1 is ghost index
         LMan=0, Ghost1
@@ -65,6 +67,9 @@ namespace icfpc {
         Direction dir;
         void InvertDir() {
             dir = (Direction)(((unsigned)dir+2)%4);
+        }
+        bool canTake(Direction newdir){
+            return newdir != (Direction)(((unsigned)dir+2)%4);
         }
     };
 
@@ -173,7 +178,7 @@ namespace icfpc {
         }
         byte lives() const { return _lmLives; }
         unsigned mapSize() const { return _wid * _hei; }
-        const vector<Coord> ghostData() const { return _ghBase; }
+        const vector<Coord> ghostData() const { return _ghBase.size(); }
         void adjustScore() { _score*=_lmLives; };
 
         // main cycle functions
@@ -263,10 +268,39 @@ namespace icfpc {
                 if (_statmap[newC.idx(_wid)] != Cell::Wall){
                     _lmCurrent = newC;
                     _opt_move |= 1;
+                    if (_statmap[newC.idx(_wid)] == Cell::Empty) {
+                        return 127;
+                    }
+                    return 137;
                 }
+                return 127; // 137? never?
             } else {
-                unsigned ghIdx = move.src - Source::Ghost1;
+                unsigned ghIdx = (unsigned)move.src - (unsigned)Source::Ghost1;
+                // test order: move, last, 
+                Direction realDir;
+                array<Direction, 6> allDirs = {move.dir, _ghCurrent[ghIdx].dir, Direction::Up, Direction::Right, Direction::Down, Direction::Left};
+                
+                for (Direction d:allDirs) {
+                    if (canMoveGhost(_ghCurrent[ghIdx], d)) {
+                        realDir = d;
+                        break;
+                    }
+                }
+
+                _ghCurrent[ghIdx].pos.applyDir(realDir);
+                _ghCurrent[ghIdx].dir = realDir;
+                } else { // ghosts STILL must roll!
+                    
+                }
+                _opt_move |= 2;
+                return (65 + (ghIdx%4)) * ((_powerPillExpiry == 0)?2:3); // вот так вот хитро мы указали ффсе константы...
             }
+        }
+    private:
+        bool canMoveGhost(const GhostState & gs, Direction dir) const {
+            Coord newC = gs.pos;
+            newC.applyDir(dir);
+            return _statmap[newC.idx(_wid)] != Cell::Wall && gs.canTake(dir);
         }
     }
 }

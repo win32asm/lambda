@@ -7,16 +7,11 @@
 #include <string>
 #include <stdexcept>
 #include <ifstream>
+#include <array>
 
 using std::vector;
 using std::string;
 
-namespace icfpc {
-    class Ghosts {
-    public:
-
-    };
-}
 
 namespace icfpc {
     class LMan {
